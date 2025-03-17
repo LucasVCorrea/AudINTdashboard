@@ -128,7 +128,7 @@ with st.expander("🔍 Filtros", expanded=False):
         "Antiguo": px.colors.qualitative.Antique,
         "Vívido": px.colors.qualitative.Vivid,
         "Prisma": px.colors.qualitative.Prism,
-        "Light24": px.colors.qualitative.Light24,
+        "Notorio": px.colors.qualitative.Light24,
     }
 
     tema_seleccionado = st.selectbox('Selecciona una paleta de colores', list(colores_disponibles.keys()))
