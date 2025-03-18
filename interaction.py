@@ -54,6 +54,19 @@ def convertir_horas_a_minutos(horas):
     minutos = round((horas - horas_enteras) * 60)
     return f"{horas_enteras}h {minutos}m"
 
+def semana_del_mes(fecha):
+    dia_del_mes = fecha.day
+
+    if 1 <= dia_del_mes <= 7:
+        return 1
+    elif 8 <= dia_del_mes <= 15:
+        return 2
+    elif 16 <= dia_del_mes <= 23:
+        return 3
+    elif 24 <= dia_del_mes <= 31:
+        return 4
+
+
 def clean_actividad_revisores(actividad_revisores):
     actividad_revisores = actividad_revisores.rename(columns = {"Cliente":"Municipio"})
     actividad_revisores["Municipio"] = actividad_revisores["Municipio"].str.capitalize()
@@ -67,6 +80,7 @@ def clean_actividad_revisores(actividad_revisores):
     actividad_revisores_listo["Mes"] = actividad_revisores_listo["Fecha"].dt.month_name().map(traducir_mes)
     actividad_revisores_listo['Aceptadas'] = pd.to_numeric(actividad_revisores_listo['Aceptadas'], errors='coerce')
     actividad_revisores_listo['Rechazadas'] = pd.to_numeric(actividad_revisores_listo['Rechazadas'], errors='coerce')
+    actividad_revisores_listo['Semana'] = actividad_revisores_listo['Fecha'].map(semana_del_mes)
 
     return actividad_revisores_listo
 
@@ -99,16 +113,36 @@ def get_data_horas_csv():
 
 
 def bar_horizontal(dataframe):
-    actividad_general = dataframe.groupby(
-        ["Auditor", "Tipo de Cámara"]).agg({"Aceptadas": ["sum"], "Rechazadas": ["sum"]}).unstack().reset_index()
-    actividad_general.columns = ["Auditor", "Luces Aceptadas", "Semáforos Aceptados", "Luces Rechazadas",
-                                 "Semáforos Rechazados"]
-    melted = actividad_general.melt(id_vars="Auditor", var_name="Tipo", value_name="Valor")
-    fig = px.bar(melted.sort_values(by="Valor"), y="Auditor", x="Valor", text_auto=".2s", color="Tipo",
+    if (len(auditor) != 1):
+        actividad_general = dataframe.groupby(
+            ["Auditor", "Tipo de Cámara"]).agg({"Aceptadas": ["sum"], "Rechazadas": ["sum"]}).unstack().reset_index()
+        actividad_general.columns = ["Auditor", "Luces Aceptadas", "Semáforos Aceptados", "Luces Rechazadas",
+                                     "Semáforos Rechazados"]
+        melted = actividad_general.melt(id_vars="Auditor", var_name="Tipo", value_name="Valor")
+        fig = px.bar(melted.sort_values(by="Valor"), y="Auditor", x="Valor", text_auto=".2s", color="Tipo",
+                     color_discrete_sequence=paleta_colores)
+        fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+        fig.update_layout(legend_title="Presuncion", legend_y=0.9)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        actividad_general = dataframe.groupby(
+            ["Fecha", "Tipo de Cámara"]).agg({"Total":["sum"]}).unstack().reset_index()
+        actividad_general.columns = ["Fecha", "Luces", "Semáforos"]
+        melted = actividad_general.melt(id_vars="Fecha", var_name="Tipo", value_name="Valor")
+        fig = px.bar(melted.sort_values(by="Valor"), x="Fecha", y="Valor", text_auto=".2s", color="Tipo",
+                     color_discrete_sequence=paleta_colores, barmode="group")
+        fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+        fig.update_layout(legend_title="Presuncion", legend_y=0.9)
+        st.plotly_chart(fig, use_container_width=True)
+
+def bar_vertical(dataframe, periodo):
+    actividad_municipios = dataframe.groupby([f"{periodo}", "Municipio"]).agg({"Total": "sum"}).reset_index()
+    actividad_municipios.columns = ["Semana", "Municipio", "Imágenes Captadas"]
+    fig = px.bar(actividad_municipios, x="Semana", y="Imágenes Captadas", color="Municipio", barmode="group",text_auto=".2s",
                  color_discrete_sequence=paleta_colores)
     fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+    fig.update_layout(legend_title="Municipio", legend_y=0.9)
     st.plotly_chart(fig, use_container_width=True)
-
 
 actividad_auditores = get_data_from_csv()
 horas_auditores = get_data_horas_csv()
@@ -189,23 +223,28 @@ def metrics(auditor, fecha):
         df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
         fig = px.pie(df_pie, values="Presunciones Captadas", names="Auditor", color_discrete_sequence=paleta_colores)
         fig.update_layout(legend_title="Auditores", legend_y=0.9)
-        fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+        fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.6)))
         st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
-
-    div1, div2 = st.columns(2)
-    #with div1:
     bar_horizontal(df_seleccionado)
-metrics(auditor, fecha)
+    div1, div2 = st.columns(2)
 
-# def pie():
-#     with div1:
-#         thme_plotly = None
-#         fig = px.pie(df_seleccionado, values="Total", names="Auditor")
-#         fig.update_layout(legend_title="Auditores", legend_y=0.9)
-#         fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
-#         st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
-# pie()
-st.dataframe(df_seleccionado)
+    with div1:
+        if len(fecha) < 1:
+            bar_vertical(df_seleccionado, "Semana")
+            tabla_semanal = df_seleccionado.groupby(["Semana", "Auditor", "Municipio"]).agg({"Total": ["sum"]}
+                                                                                            ).unstack(
+            ).reset_index().fillna(0)
+            tabla_semanal.columns = ["Semana", "Auditor", "Berisso", "Ezeiza", "Lanus"]
+        else:
+            bar_vertical(df_seleccionado, "Fecha")
+            tabla_semanal = df_seleccionado.groupby(["Fecha", "Auditor", "Municipio"]).agg({"Total": ["sum"]}
+                                                                                            ).unstack(
+            ).reset_index().fillna(0)
+            tabla_semanal.columns = ["Fecha", "Auditor", "Berisso", "Ezeiza", "Lanus"]
+    with div2:
+        st.dataframe(tabla_semanal)
+metrics(auditor, fecha)
+#st.dataframe(df_seleccionado)
 #st.dataframe(df_seleccionado_horas)
 # #Filtrar por Mes y Municipio
 # municipio = st.sidebar.multiselect("Selecciona el municipio: ", options=actividad_auditores["Municipio"].unique())

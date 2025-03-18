@@ -1,0 +1,10 @@
+#[theme]
+#primaryColor = "DarkCyan"
+#
+#backgroundColor = "#0f0f17"
+#
+#secondaryBackgroundColor = "DarkSlateGray"
+#
+#textColor = "#FFF"
+#
+#font = "sans serif"
