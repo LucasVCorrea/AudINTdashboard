@@ -22,11 +22,11 @@ hide_st_style = """
             padding-top: 0px !important;
         }
         .custom-div {
-        border: 2px solid #4CAF50; /* Color del borde */
+        border: 2px solid #a6a6a6; /* Color del borde */
         border-radius: 10px; /* Bordes redondeados */
         padding: 10px;
         margin-bottom: 2px;
-        background-color: #f9f9f9; /* Color de fondo opcional */
+        background-color: #001a00; /* Color de fondo opcional */
     }
     </style>
     """
@@ -122,17 +122,18 @@ def bar_horizontal(dataframe):
         fig = px.bar(melted.sort_values(by="Valor"), y="Auditor", x="Valor", text_auto=".2s", color="Tipo",
                      color_discrete_sequence=paleta_colores)
         fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
-        fig.update_layout(legend_title="Presuncion", legend_y=0.9)
+        fig.update_layout(legend_title="Presuncion", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
         st.plotly_chart(fig, use_container_width=True)
+
     else:
         actividad_general = dataframe.groupby(
-            ["Fecha", "Tipo de Cámara"]).agg({"Total":["sum"]}).unstack().reset_index()
-        actividad_general.columns = ["Fecha", "Luces", "Semáforos"]
-        melted = actividad_general.melt(id_vars="Fecha", var_name="Tipo", value_name="Valor")
-        fig = px.bar(melted.sort_values(by="Valor"), x="Fecha", y="Valor", text_auto=".2s", color="Tipo",
+            ["Fecha", "Tipo de Cámara"]).agg({"Total":["sum"]}).reset_index()
+        actividad_general.columns = ["Fecha", "Tipo", "Valor"]
+        #melted = actividad_general.melt(id_vars="Fecha", var_name="Tipo", value_name="Valor")
+        fig = px.bar(actividad_general.sort_values(by="Valor"), x="Fecha", y="Valor", text_auto=".2s", color="Tipo",
                      color_discrete_sequence=paleta_colores, barmode="group")
         fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
-        fig.update_layout(legend_title="Presuncion", legend_y=0.9)
+        fig.update_layout(legend_title="Presuncion", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
         st.plotly_chart(fig, use_container_width=True)
 
 def bar_vertical(dataframe, periodo):
@@ -141,7 +142,7 @@ def bar_vertical(dataframe, periodo):
     fig = px.bar(actividad_municipios, x="Semana", y="Imágenes Captadas", color="Municipio", barmode="group",text_auto=".2s",
                  color_discrete_sequence=paleta_colores)
     fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
-    fig.update_layout(legend_title="Municipio", legend_y=0.9)
+    fig.update_layout(legend_title="Municipio", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
     st.plotly_chart(fig, use_container_width=True)
 
 actividad_auditores = get_data_from_csv()
@@ -200,7 +201,7 @@ def metrics(auditor, fecha):
     middle.metric("Total auditado del Mes", value=int(data_filtrada_por_mes.Total.sum()))
     right.metric("Presunciones de auditores elegidos", value=int(infracciones_auditor))
     border.metric("Horas trabajadas de auditores elegidos", value = convertir_horas_a_minutos(horas_auditor))
-    style_metric_cards(background_color="#f9f9f9", border_left_color="black")
+    style_metric_cards(background_color="#003300", border_left_color="#e6ffe6")
     div1, div2 = st.columns([6, 7])
     if len(auditor) > 1:
         with div2:
@@ -218,13 +219,15 @@ def metrics(auditor, fecha):
                                     f'{convertir_horas_a_minutos(comparative_dataset_horas.loc[comparative_dataset_horas["Auditor"] == auditor].Total.sum())}</div>', unsafe_allow_html=True)
 
     with div1:
+
         thme_plotly = None
         df_pie= df_seleccionado.copy()
         df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
         fig = px.pie(df_pie, values="Presunciones Captadas", names="Auditor", color_discrete_sequence=paleta_colores)
-        fig.update_layout(legend_title="Auditores", legend_y=0.9)
+        fig.update_layout(legend_title="Auditores", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
         fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.6)))
         st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
+
     bar_horizontal(df_seleccionado)
     div1, div2 = st.columns(2)
 
@@ -232,15 +235,13 @@ def metrics(auditor, fecha):
         if len(fecha) < 1:
             bar_vertical(df_seleccionado, "Semana")
             tabla_semanal = df_seleccionado.groupby(["Semana", "Auditor", "Municipio"]).agg({"Total": ["sum"]}
-                                                                                            ).unstack(
-            ).reset_index().fillna(0)
-            tabla_semanal.columns = ["Semana", "Auditor", "Berisso", "Ezeiza", "Lanus"]
+                                                                                            ).reset_index().fillna(0)
+            tabla_semanal.columns = ["Semana", "Auditor", "Municipio", "Total"]
         else:
             bar_vertical(df_seleccionado, "Fecha")
             tabla_semanal = df_seleccionado.groupby(["Fecha", "Auditor", "Municipio"]).agg({"Total": ["sum"]}
-                                                                                            ).unstack(
-            ).reset_index().fillna(0)
-            tabla_semanal.columns = ["Fecha", "Auditor", "Berisso", "Ezeiza", "Lanus"]
+                                                                                            ).reset_index().fillna(0)
+            tabla_semanal.columns = ["Fecha", "Auditor", "Municipio", "Total"]
     with div2:
         st.dataframe(tabla_semanal)
 metrics(auditor, fecha)
