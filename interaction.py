@@ -217,9 +217,20 @@ def metrics(auditor, fecha):
                     else:
                         st.markdown(f'<div class="custom-div">{auditor.title()}<br>Presunciones Captadas: {int(comparative_dataset.loc[comparative_dataset["Auditor"] == auditor].Total.sum())}<br>Horas Trabajadas: '
                                     f'{convertir_horas_a_minutos(comparative_dataset_horas.loc[comparative_dataset_horas["Auditor"] == auditor].Total.sum())}</div>', unsafe_allow_html=True)
+    else:
+        with div2:
+            ultima = data_filtrada_por_mes.loc[data_filtrada_por_mes["Fecha"] == data_filtrada_por_mes["Fecha"].max()]
+            ultima_fecha_camaras = ultima.groupby("Auditor").agg({"Total":["sum"]}).reset_index()
+            ultima_fecha_camaras.columns = ["Auditor","Total"]
+            ultima_fecha_camaras["Auditor"] = ultima_fecha_camaras["Auditor"].map(lambda x: f"{x.split(' ')[0].strip()} {x.split(' ')[-1].strip()}")
 
+            fig = px.bar(ultima_fecha_camaras.nlargest(8, "Total"), y="Total", x="Auditor", text_auto=".2s",
+                     color_discrete_sequence=paleta_colores, title = f"Más Fiscalizaciones\n{ultima.Fecha.unique()[-1]}")
+            fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+            fig.update_layout(legend_title="Municipio", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
+                              plot_bgcolor="rgb(0, 17, 0)")
+            st.plotly_chart(fig, use_container_width=True, theme=None)
     with div1:
-
         thme_plotly = None
         df_pie= df_seleccionado.copy()
         df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
