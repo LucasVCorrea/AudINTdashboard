@@ -115,11 +115,21 @@ def get_data_horas_csv():
 def bar_horizontal(dataframe):
     if (len(auditor) != 1):
         actividad_general = dataframe.groupby(
-            ["Auditor", "Tipo de Cámara"]).agg({"Aceptadas": ["sum"], "Rechazadas": ["sum"]}).unstack().reset_index()
-        actividad_general.columns = ["Auditor", "Luces Aceptadas", "Semáforos Aceptados", "Luces Rechazadas",
-                                     "Semáforos Rechazados"]
-        melted = actividad_general.melt(id_vars="Auditor", var_name="Tipo", value_name="Valor")
-        fig = px.bar(melted.sort_values(by="Valor"), y="Auditor", x="Valor", text_auto=".2s", color="Tipo",
+            ["Auditor", "Tipo de Cámara"]).agg({"Aceptadas": ["sum"], "Rechazadas": ["sum"]}).reset_index()
+        actividad_general.columns = ["Auditor", "Tipo de cámara", "Aceptadas", "Rechazadas"]
+        melted = actividad_general.melt(
+            id_vars=["Auditor", "Tipo de cámara"],  # Columnas que no cambian
+            value_vars=["Aceptadas", "Rechazadas"],  # Columnas que queremos transformar
+            var_name="Resultado",  # Nombre de la nueva columna
+            value_name="Total"  # Nombre de la columna con los valores numéricos
+        )
+
+        # Crear la columna "Resultado" con el formato correcto
+        melted["Resultado"] = melted["Tipo de cámara"] + " " + melted["Resultado"].str.capitalize()
+
+        # Eliminar la columna "Tipo de cámara" porque ya está incluida en "Resultado"
+        melted = melted.drop(columns=["Tipo de cámara"])
+        fig = px.bar(melted.sort_values(by="Total"), y="Auditor", x="Total", text_auto=".2s", color="Resultado",
                      color_discrete_sequence=paleta_colores)
         fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
         fig.update_layout(legend_title="Presuncion", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
@@ -157,11 +167,11 @@ with st.expander("🔍 Filtros", expanded=False):
     auditor = st.multiselect("Selecciona el auditor:", actividad_auditores["Auditor"].unique())
     fecha = st.multiselect("Selecciona la fecha:", data_filtrada_por_mes["Fecha"].unique())
     colores_disponibles = {
-        "Pastel": px.colors.qualitative.Pastel,
+        "Vívido": px.colors.qualitative.Vivid,
         "Estandar": px.colors.qualitative.Set1,
         "G10": px.colors.qualitative.G10,
         "Antiguo": px.colors.qualitative.Antique,
-        "Vívido": px.colors.qualitative.Vivid,
+        "Pastel": px.colors.qualitative.Pastel,
         "Prisma": px.colors.qualitative.Prism,
         "Notorio": px.colors.qualitative.Light24,
     }
@@ -172,7 +182,7 @@ with st.expander("🔍 Filtros", expanded=False):
 data_filtrada_por_mes = actividad_auditores.query("Mes == @mes") if mes else actividad_auditores
 horas_filtradas_por_mes = horas_auditores.query("Mes == @mes") if mes else actividad_auditores
 
-
+data_filtrada_por_fecha_dentro_mes = data_filtrada_por_mes.query("Fecha == @fecha") if fecha else data_filtrada_por_mes
 # Filtrar por Auditor y Mes
 data_filtrada_por_auditor = data_filtrada_por_mes.query("Auditor == @auditor") if auditor else data_filtrada_por_mes
 horas_filtrada_por_auditor = horas_filtradas_por_mes.query("Auditor == @auditor") if auditor else horas_filtradas_por_mes
@@ -204,6 +214,17 @@ def metrics(auditor, fecha):
     style_metric_cards(background_color="#003300", border_left_color="#e6ffe6")
     div1, div2 = st.columns([6, 7])
     if len(auditor) > 1:
+        with div1:
+            thme_plotly = None
+            df_pie = df_seleccionado.copy()
+            df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
+            fig = px.pie(df_pie, values="Presunciones Captadas", names="Auditor",
+                         color_discrete_sequence=paleta_colores)
+            fig.update_layout(legend_title="Auditores", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
+                              plot_bgcolor="rgb(0, 17, 0)")
+            fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.6)))
+            st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
+
         with div2:
             comparative_dataset = data_filtrada_por_auditor.groupby(["Auditor","Fecha"]).agg({"Total": ["sum"]}).reset_index()
             comparative_dataset.columns = ["Auditor","Fecha" ,"Total"]
@@ -217,27 +238,57 @@ def metrics(auditor, fecha):
                     else:
                         st.markdown(f'<div class="custom-div">{auditor.title()}<br>Presunciones Captadas: {int(comparative_dataset.loc[comparative_dataset["Auditor"] == auditor].Total.sum())}<br>Horas Trabajadas: '
                                     f'{convertir_horas_a_minutos(comparative_dataset_horas.loc[comparative_dataset_horas["Auditor"] == auditor].Total.sum())}</div>', unsafe_allow_html=True)
+    elif len(auditor) == 1:
+        presunciones_del_mes = data_filtrada_por_fecha_dentro_mes.groupby("Auditor").agg({"Total": ["sum"]}).reset_index()
+        presunciones_del_mes.columns = ["Auditor","Total"]
+        nombre_destacado = auditor[0]
+        color_normal = paleta_colores[0]
+        color_destacado = paleta_colores[1]
+        presunciones_del_mes["Color"] = presunciones_del_mes['Auditor'].apply(lambda x: color_destacado if x == nombre_destacado else color_normal)
+        presunciones_del_mes = presunciones_del_mes.sort_values(by="Total")
+        fig = px.bar(presunciones_del_mes, x='Auditor', y='Total', color='Color',
+                     color_discrete_map='identity',category_orders={"Auditor": presunciones_del_mes["Auditor"].tolist()})
+        fig.update_layout(paper_bgcolor="rgb(0, 17, 0)",
+                          plot_bgcolor="rgb(0, 17, 0)")
+        st.plotly_chart(fig, use_container_width=True, theme=None)
     else:
-        with div2:
-            ultima = data_filtrada_por_mes.loc[data_filtrada_por_mes["Fecha"] == data_filtrada_por_mes["Fecha"].max()]
-            ultima_fecha_camaras = ultima.groupby("Auditor").agg({"Total":["sum"]}).reset_index()
-            ultima_fecha_camaras.columns = ["Auditor","Total"]
-            ultima_fecha_camaras["Auditor"] = ultima_fecha_camaras["Auditor"].map(lambda x: f"{x.split(' ')[0].strip()} {x.split(' ')[-1].strip()}")
-
-            fig = px.bar(ultima_fecha_camaras.nlargest(8, "Total"), y="Total", x="Auditor", text_auto=".2s",
-                     color_discrete_sequence=paleta_colores, title = f"Más Fiscalizaciones\n{ultima.Fecha.unique()[-1]}")
-            fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
-            fig.update_layout(legend_title="Municipio", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
+        with div1:
+            thme_plotly = None
+            df_pie = df_seleccionado.copy()
+            df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
+            fig = px.pie(df_pie, values="Presunciones Captadas", names="Auditor",
+                         color_discrete_sequence=paleta_colores)
+            fig.update_layout(legend_title="Auditores", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
                               plot_bgcolor="rgb(0, 17, 0)")
-            st.plotly_chart(fig, use_container_width=True, theme=None)
-    with div1:
-        thme_plotly = None
-        df_pie= df_seleccionado.copy()
-        df_pie = df_pie.rename(columns={"Total": "Presunciones Captadas"})
-        fig = px.pie(df_pie, values="Presunciones Captadas", names="Auditor", color_discrete_sequence=paleta_colores)
-        fig.update_layout(legend_title="Auditores", legend_y=0.9,paper_bgcolor="rgb(0, 17, 0)", plot_bgcolor="rgb(0, 17, 0)")
-        fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.6)))
-        st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
+            fig.update_traces(textinfo=None, textposition="inside", marker=dict(line=dict(color='black', width=.6)))
+            st.plotly_chart(fig, use_container_width=True, theme=thme_plotly)
+
+        with div2:
+            if len(mes) == 1:
+                ultima_fecha_camaras = data_filtrada_por_fecha_dentro_mes.groupby("Auditor").agg({"Total":["sum"]}).reset_index()
+                ultima_fecha_camaras.columns = ["Auditor","Total"]
+                ultima_fecha_camaras["Auditor"] = ultima_fecha_camaras["Auditor"].map(lambda x: f"{x.split(' ')[0].strip()} {x.split(' ')[-1].strip()}")
+
+                fig = px.bar(ultima_fecha_camaras.nlargest(8, "Total"), y="Total", x="Auditor", text_auto=".2s",
+                         color_discrete_sequence=paleta_colores, title = f"Más Fiscalizaciones\n{mes[-1]}")
+                fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
+                fig.update_layout(legend_title="Municipio", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
+                                  plot_bgcolor="rgb(0, 17, 0)")
+                st.plotly_chart(fig, use_container_width=True, theme=None)
+            else:
+                ultima_fecha_camaras = data_filtrada_por_fecha_dentro_mes.groupby(["Auditor", "Mes"]).agg(
+                    {"Total": ["sum"]}).reset_index()
+                ultima_fecha_camaras.columns = ["Auditor", "Mes","Total"]
+                ultima_fecha_camaras["Auditor"] = ultima_fecha_camaras["Auditor"].map(lambda x: x.split(" ")[0])
+
+                fig = px.bar(ultima_fecha_camaras.nlargest(len(ultima_fecha_camaras), "Total"), y="Total", x="Auditor", text_auto=".2s",
+                             color_discrete_sequence=paleta_colores, title=f"Más Fiscalizaciones\n{", ".join(mes)}",
+                             color="Mes", barmode="group")
+                fig.update_traces(textfont_size=18, textposition="inside",
+                                  marker=dict(line=dict(color='black', width=.5)))
+                fig.update_layout(legend_title="Mes", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
+                                  plot_bgcolor="rgb(0, 17, 0)")
+                st.plotly_chart(fig, use_container_width=True, theme=None)
 
     bar_horizontal(df_seleccionado)
     div1, div2 = st.columns(2)
@@ -256,9 +307,3 @@ def metrics(auditor, fecha):
     with div2:
         st.dataframe(tabla_semanal)
 metrics(auditor, fecha)
-#st.dataframe(df_seleccionado)
-#st.dataframe(df_seleccionado_horas)
-# #Filtrar por Mes y Municipio
-# municipio = st.sidebar.multiselect("Selecciona el municipio: ", options=actividad_auditores["Municipio"].unique())
-# dataframe_solo_municipio = actividad_auditores.query("Municipio == @municipio")
-# data_filtrada_por_municipio = data_filtrada_por_mes.query("Municipio == @municipio") if mes else dataframe_solo_municipio
