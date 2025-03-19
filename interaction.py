@@ -24,7 +24,14 @@ def autenticar(usuario, contrasena):
 
 # --- Pantalla de Login ---
 if not st.session_state.authenticated:
-    st.title("Inicio de Sesión")
+    #st.title("Inicio de Sesión")
+    col1, col2,col3 = st.columns(3)  # Se crean 2 columnas para el logo y el título
+    with col2:
+        # Asegúrate de poner la ruta correcta de tu logo PNG
+        st.image("Images/97af7f38-64ab-447c-94b8-7fb30f6ae92a_Logo---Verde.png", width=200)  # Ajusta el tamaño con `width`
+
+    #with col2:
+        #st.title("Inicio de Sesión")
 
     usuario = st.text_input("Usuario:")
     contrasena = st.text_input("Contraseña:", type="password")
