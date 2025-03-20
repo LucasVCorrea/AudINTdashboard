@@ -10,7 +10,8 @@ if "authenticated" not in st.session_state:
 usuarios_validos = {
     "admin": "1234",
     "usuario1": "password1",
-    "oficina":"123456"
+    "oficina":"123456",
+    "pri":"1234"
 }
 
 
