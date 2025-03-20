@@ -11,7 +11,7 @@ usuarios_validos = {
     "admin": "1234",
     "usuario1": "password1",
     "oficina":"123456",
-    "pri":"1234"
+    "pri":"1235"
 }
 
 
