@@ -1,60 +1,48 @@
 import datetime
-
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 import streamlit_extras.metric_cards
-import seaborn as sns
-# from google.colab import drive, files
-# drive.mount('/content/drive')
+
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
-# --- Definir usuarios y contraseñas válidas ---
 usuarios_validos = {
     "admin": "1234",
-    "usuario1": "password1"
+    "usuario1": "password1",
+    "oficina":"123456"
 }
 
 
-# --- Función de autenticación ---
 def autenticar(usuario, contrasena):
     return usuarios_validos.get(usuario) == contrasena
 
-
-# --- Pantalla de Login ---
+# Login
 if not st.session_state.authenticated:
-    #st.title("Inicio de Sesión")
-    col1, col2,col3 = st.columns(3)  # Se crean 2 columnas para el logo y el título
+    col1, col2, col3 = st.columns(3)
     with col2:
-        # Asegúrate de poner la ruta correcta de tu logo PNG
         st.image("Images/97af7f38-64ab-447c-94b8-7fb30f6ae92a_Logo---Verde.png", width=200)  # Ajusta el tamaño con `width`
-
-    #with col2:
-        #st.title("Inicio de Sesión")
 
     usuario = st.text_input("Usuario:")
     contrasena = st.text_input("Contraseña:", type="password")
-
     if st.button("Iniciar sesión"):
         if autenticar(usuario, contrasena):
             st.session_state.authenticated = True
             st.session_state.usuario = usuario  # Guardamos el usuario en sesión
             st.session_state.hora_entrada = datetime.datetime.now()  # Guardamos la hora de entrada
 
-            st.rerun()  # Recarga la app para mostrar el dashboard
+            # Mostrar un mensaje de bienvenida o redirigir a otro contenido
+            st.success(f"Bienvenido, {usuario}!")
+            st.rerun()  # Recarga la app después de login exitoso
         else:
             st.error("Usuario o contraseña incorrectos")
 
-# --- Dashboard (se muestra solo si está autenticado) ---
 else:
     usuario = st.session_state.usuario
     hora_entrada = st.session_state.hora_entrada
-
-    # Imprimir en consola
-    print(f"Usuario: {usuario} ingresó a las {hora_entrada}")
     st.set_page_config(page_title="Auditores Data", page_icon=":bar_chart:", layout="wide")
-
+    #st.write(f"Usuarios viendo: {usuario}")
+    print(f"Usuario: {usuario} ingresó a las {hora_entrada}")
     hide_st_style = """
         <style>
         #MainMenu {visibility: hidden;}
@@ -259,7 +247,7 @@ else:
         middle.metric("Total auditado del Mes", value=int(data_filtrada_por_mes.Total.sum()))
         right.metric("Presunciones de auditores elegidos", value=int(infracciones_auditor))
         border.metric("Horas trabajadas de auditores elegidos", value = convertir_horas_a_minutos(horas_auditor))
-        style_metric_cards(background_color="#003300", border_left_color="#e6ffe6")
+        style_metric_cards(background_color="#0b0d0e", border_left_color="#ff8533")
         div1, div2 = st.columns([6, 7])
         if len(auditor) > 1:
             with div1:
