@@ -11,13 +11,16 @@ usuarios_validos = {
     "admin": "1234",
     "usuario1": "password1",
     "oficina":"123456",
-    "pri":"1235"
+    "pri":"prilamejor"
 }
-
 
 def autenticar(usuario, contrasena):
     return usuarios_validos.get(usuario) == contrasena
+archivo_csv = "registros/registros_sesiones.csv"
 
+def registrar_inicio_sesion(usuario, hora_entrada):
+    registro = pd.DataFrame([[usuario, hora_entrada]], columns=['Usuario', 'Hora'])
+    registro.to_csv(archivo_csv, mode='a', header=False, index=False)
 # Login
 if not st.session_state.authenticated:
     col1, col2, col3 = st.columns(3)
@@ -29,21 +32,19 @@ if not st.session_state.authenticated:
     if st.button("Iniciar sesión"):
         if autenticar(usuario, contrasena):
             st.session_state.authenticated = True
-            st.session_state.usuario = usuario  # Guardamos el usuario en sesión
-            st.session_state.hora_entrada = datetime.datetime.now()  # Guardamos la hora de entrada
-
-            # Mostrar un mensaje de bienvenida o redirigir a otro contenido
-            st.success(f"Bienvenido, {usuario}!")
-            st.rerun()  # Recarga la app después de login exitoso
+            st.session_state.usuario = usuario
+            st.session_state.hora_entrada = datetime.datetime.now()
         else:
             st.error("Usuario o contraseña incorrectos")
 
 else:
     usuario = st.session_state.usuario
-    hora_entrada = st.session_state.hora_entrada
+    hora_entrada = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f"Usuario:{usuario}, fecha de ingreso: {hora_entrada}")
+    registrar_inicio_sesion(usuario, hora_entrada)
     st.set_page_config(page_title="Auditores Data", page_icon=":bar_chart:", layout="wide")
-    #st.write(f"Usuarios viendo: {usuario}")
-    print(f"Usuario: {usuario} ingresó a las {hora_entrada}")
+
+
     hide_st_style = """
         <style>
         #MainMenu {visibility: hidden;}
@@ -148,7 +149,6 @@ else:
 
         return horas_auditores
 
-
     def bar_horizontal(dataframe):
         if (len(auditor) != 1):
             actividad_general = dataframe.groupby(
@@ -196,8 +196,6 @@ else:
     horas_auditores = get_data_horas_csv()
 
     # --- SIDEBAR ----
-    #st.header("Filtra acá:")
-
     with st.expander("🔍 Filtros", expanded=False):
         mes = st.multiselect("Selecciona el mes:", actividad_auditores["Mes"].unique(),default=actividad_auditores["Mes"].unique()[-1])
         data_filtrada_por_mes = actividad_auditores.query("Mes == @mes") if mes else actividad_auditores

@@ -6,3 +6,9 @@ backgroundColor = "#000a00"
 secondaryBackgroundColor = "#2F4F4F"
 
 textColor = "#ffffff"
+
+[footer]
+hideStreamlitIcon = true
+
+[ui]
+hideMenu = true  # Oculta el menú de hamburguesa (esquina superior derecha)
