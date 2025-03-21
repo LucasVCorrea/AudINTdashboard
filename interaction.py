@@ -36,14 +36,12 @@ if not st.session_state.authenticated:
             st.session_state.hora_entrada = datetime.datetime.now()
         else:
             st.error("Usuario o contraseña incorrectos")
-
 else:
     usuario = st.session_state.usuario
     hora_entrada = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"Usuario:{usuario}, fecha de ingreso: {hora_entrada}")
     registrar_inicio_sesion(usuario, hora_entrada)
     st.set_page_config(page_title="Auditores Data", page_icon=":bar_chart:", layout="wide")
-
 
     hide_st_style = """
         <style>

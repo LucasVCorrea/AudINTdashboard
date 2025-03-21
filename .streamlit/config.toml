@@ -11,4 +11,4 @@ textColor = "#ffffff"
 hideStreamlitIcon = true
 
 [ui]
-hideMenu = true  # Oculta el menú de hamburguesa (esquina superior derecha)
+hideMenu = true
