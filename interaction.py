@@ -323,52 +323,47 @@ else:
                     x='Auditor', y='Total',
                     color='Color',
                     color_discrete_map='identity',
-                    category_orders={"Auditor": presunciones_del_mes["Auditor"].tolist()}
+                    category_orders={"Auditor": presunciones_del_mes["Auditor"].tolist()},
+                    title="Imágenes Captadas"
                 )
 
-                # fig.update_traces(
-                #     text=presunciones_del_mes_sorted['Total'].astype(str),  # Aseguramos que 'Total' es texto
-                #     textposition='outside',  # Posicionamos los textos fuera de la barra
-                #     texttemplate='%{text}',  # Formateamos el texto para mostrar solo el valor
-                # )
 
                 fig.update_layout(paper_bgcolor="rgb(0, 17, 0)",
                                   plot_bgcolor="rgb(0, 17, 0)")
+                fig.update_traces(textfont_size=18, textposition="inside",
+                                  marker=dict(line=dict(color='black', width=.5)))
                 st.plotly_chart(fig, use_container_width=True, theme=None)
 
-            presunciones_del_mes_horas = horas_filtradas_por_mes.groupby("Auditor").agg({"Total (en horas)": ["sum"]}).reset_index()
+            presunciones_del_mes_horas = data_filtrada_por_fecha_dentro_mes_horas.groupby("Auditor").agg({"Total (en horas)": ["sum"]}).reset_index()
             presunciones_del_mes_horas.columns = ["Auditor","Total"]
             nombre_destacado = auditor[0]
             color_normal = paleta_colores[3]
             color_destacado = paleta_colores[4]
 
-            # Asignamos colores en función de la condición, sin ordenar aún
             presunciones_del_mes_horas["Color"] = presunciones_del_mes_horas['Auditor'].map(
                 lambda x: color_destacado if x == nombre_destacado else color_normal)
 
-            # Ordenamos por la columna Total
             presunciones_del_mes_horas = presunciones_del_mes_horas.sort_values(by="Total")
 
             presunciones_del_mes_horas["Auditor"] = presunciones_del_mes_horas["Auditor"].apply(
                 lambda x: ' '.join([x.split()[0], x.split()[-1]]) if len(x.split()) > 1 else x
             )
-            # Crear gráfico de barras, asegurándonos que los datos ya están ordenados
+
             with colb:
                 fig = px.bar(
                     presunciones_del_mes_horas,
                     x='Auditor', y='Total',
                     color='Color',
                     color_discrete_map='identity',
-                    category_orders={"Auditor": presunciones_del_mes_horas["Auditor"].tolist()}
+                    category_orders={"Auditor": presunciones_del_mes_horas["Auditor"].tolist()},
+                    title = "Horas Trabajadas"
                 )
-                # fig.update_traces(
-                #     text=presunciones_del_mes_sorted['Total'].astype(str),  # Aseguramos que 'Total' es texto
-                #     textposition='outside',  # Posicionamos los textos fuera de la barra
-                #     texttemplate='%{text}',  # Formateamos el texto para mostrar solo el valor
-                # )
 
                 fig.update_layout(paper_bgcolor="rgb(0, 17, 0)",
                                   plot_bgcolor="rgb(0, 17, 0)")
+                fig.update_traces(textfont_size=30, textposition="outside",
+                                  marker=dict(line=dict(color='black', width=.5)))#, text = presunciones_del_mes_horas["Total"].map(convertir_horas_a_minutos))
+
                 st.plotly_chart(fig, use_container_width=True, theme=None)
         else:
             with div1:
