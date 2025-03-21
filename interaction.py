@@ -300,9 +300,7 @@ else:
             cola,colb = st.columns(2)
             presunciones_del_mes = data_filtrada_por_fecha_dentro_mes.groupby("Auditor").agg({"Total": ["sum"]}).reset_index()
             presunciones_del_mes.columns = ["Auditor","Total"]
-            presunciones_del_mes["Auditor"] = presunciones_del_mes["Auditor"].apply(
-                lambda x: ' '.join([x.split()[0], x.split()[-1]]) if len(x.split()) > 1 else x
-            )
+
             nombre_destacado = auditor[0]
             color_normal = paleta_colores[0]
             color_destacado = paleta_colores[1]
@@ -312,16 +310,20 @@ else:
                 lambda x: color_destacado if x == nombre_destacado else color_normal)
 
             # Ordenamos por la columna Total
-            presunciones_del_mes_sorted = presunciones_del_mes.sort_values(by="Total")
+            presunciones_del_mes = presunciones_del_mes.sort_values(by="Total")
+
+            presunciones_del_mes["Auditor"] = presunciones_del_mes["Auditor"].apply(
+                lambda x: ' '.join([x.split()[0], x.split()[-1]]) if len(x.split()) > 1 else x
+            )
 
             # Crear gráfico de barras, asegurándonos que los datos ya están ordenados
             with cola:
                 fig = px.bar(
-                    presunciones_del_mes_sorted,
+                    presunciones_del_mes,
                     x='Auditor', y='Total',
                     color='Color',
                     color_discrete_map='identity',
-                    category_orders={"Auditor": presunciones_del_mes_sorted["Auditor"].tolist()}
+                    category_orders={"Auditor": presunciones_del_mes["Auditor"].tolist()}
                 )
 
                 # fig.update_traces(
@@ -336,9 +338,6 @@ else:
 
             presunciones_del_mes_horas = horas_filtradas_por_mes.groupby("Auditor").agg({"Total (en horas)": ["sum"]}).reset_index()
             presunciones_del_mes_horas.columns = ["Auditor","Total"]
-            presunciones_del_mes_horas["Auditor"] = presunciones_del_mes_horas["Auditor"].apply(
-                lambda x: ' '.join([x.split()[0], x.split()[-1]]) if len(x.split()) > 1 else x
-            )
             nombre_destacado = auditor[0]
             color_normal = paleta_colores[3]
             color_destacado = paleta_colores[4]
@@ -350,6 +349,9 @@ else:
             # Ordenamos por la columna Total
             presunciones_del_mes_horas = presunciones_del_mes_horas.sort_values(by="Total")
 
+            presunciones_del_mes_horas["Auditor"] = presunciones_del_mes_horas["Auditor"].apply(
+                lambda x: ' '.join([x.split()[0], x.split()[-1]]) if len(x.split()) > 1 else x
+            )
             # Crear gráfico de barras, asegurándonos que los datos ya están ordenados
             with colb:
                 fig = px.bar(
