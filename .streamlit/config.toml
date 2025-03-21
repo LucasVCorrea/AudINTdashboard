@@ -9,6 +9,15 @@ textColor = "#ffffff"
 
 [footer]
 hideStreamlitIcon = true
+show_version = false
+show_deploy_button = false
 
 [ui]
 hideMenu = true
+hide_streamlit_markers = true
+
+[global]
+disable_telemetry = true
+
+[help]
+show_help = false
