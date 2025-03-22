@@ -199,6 +199,7 @@ else:
             actividad_general = dataframe.groupby(
                 ["Fecha", "Tipo de Cámara"]).agg({"Total":["sum"]}).reset_index()
             actividad_general.columns = ["Fecha", "Tipo", "Valor"]
+            actividad_general["Fecha"] = actividad_general["Fecha"].replace("2024-03-17", "2025-03-17")
             fig = px.bar(actividad_general.sort_values(by="Valor"), x="Fecha", y="Valor", text_auto=".2s", color="Tipo",
                          color_discrete_sequence=paleta_colores, barmode="group")
             fig.update_traces(textfont_size=18, textposition="inside", marker=dict(line=dict(color='black', width=.5)))
