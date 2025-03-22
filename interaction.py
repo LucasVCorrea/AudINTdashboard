@@ -74,6 +74,7 @@ def clean_horas_revisores(horas_de_revisores):
     horas_de_revisores['Total (en horas)'] = pd.to_numeric(horas_de_revisores['Total (en horas)'], errors='coerce')
     horas_de_revisores["Total (en horas)"] = horas_de_revisores[
                                                  "Total (en horas)"] / 100  # Esto lo hago porque se ve que cuando se carga el excel lo pasa a entero y se pierde el tiempo real
+    horas_de_revisores["Fecha"] = pd.to_datetime(horas_de_revisores["Fecha"])
     horas_de_revisores["Mes"] = pd.to_datetime(horas_de_revisores["Fecha"]).dt.month_name().map(traducir_mes)
     horas_de_revisores = horas_de_revisores.drop(columns=["Tipo de Revisión", "Nivel de Revisión"])
     return horas_de_revisores
