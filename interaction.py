@@ -220,7 +220,7 @@ else:
     with st.expander("🔍 Filtros", expanded=False):
         mes = st.multiselect("Selecciona el mes:", actividad_auditores["Mes"].unique(),default=actividad_auditores["Mes"].unique()[-1])
         data_filtrada_por_mes = actividad_auditores.query("Mes == @mes") if mes else actividad_auditores
-        auditor = st.multiselect("Selecciona el auditor:", actividad_auditores["Auditor"].unique())
+        auditor = st.multiselect("Selecciona el auditor:", sorted(actividad_auditores["Auditor"].unique()))
         fecha = st.multiselect("Selecciona la fecha:", data_filtrada_por_mes["Fecha"].unique())
         colores_disponibles = {
             "Vívido": px.colors.qualitative.Vivid,
@@ -394,10 +394,11 @@ else:
                         {"Total": ["sum"]}).reset_index()
                     ultima_fecha_camaras.columns = ["Auditor", "Mes","Total"]
                     ultima_fecha_camaras["Auditor"] = ultima_fecha_camaras["Auditor"].map(lambda x: x.split(" ")[0])
-
-                    fig = px.bar(ultima_fecha_camaras.nlargest(len(ultima_fecha_camaras), "Total"), y="Total", x="Auditor", text_auto=".2s",
+                    months = ["Julio", "Agosto", "Septiembre", "Octubre", "Noviembre","Diciembre", "Enero", "Febrero", "Marzo"]
+                    ultima_fecha_camaras = ultima_fecha_camaras.sort_values(by = "Auditor")
+                    fig = px.bar(ultima_fecha_camaras, y="Total", x="Auditor", text_auto=".2s",
                                  color_discrete_sequence=paleta_colores, title=f"Más Fiscalizaciones\n{", ".join(mes)}",
-                                 color="Mes", barmode="group")
+                                 color="Mes", barmode="group",  category_orders={"Mes":months})
                     fig.update_traces(textfont_size=18, textposition="inside",
                                       marker=dict(line=dict(color='black', width=.5)))
                     fig.update_layout(legend_title="Mes", legend_y=0.9, paper_bgcolor="rgb(0, 17, 0)",
